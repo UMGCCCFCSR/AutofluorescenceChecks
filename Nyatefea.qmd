@@ -1,0 +1,43 @@
+---
+title: "Cytek Fluor Suggestions"
+format: html
+---
+
+```{r}
+library(Luciernaga)
+```
+
+
+```{r}
+QC_ReferenceLibrary("BB", 64)
+```
+
+```{r}
+Plots <- QC_SimilarFluorophores("cFluor R685", 64, returnPlots=TRUE)
+Plots[[1]]
+plotly::ggplotly(Plots[[2]])
+```
+
+```{r}
+Plots <- QC_SimilarFluorophores("Alexa Fluor 594", 64, returnPlots=TRUE)
+Plots[[1]]
+plotly::ggplotly(Plots[[2]])
+```
+
+```{r}
+Plots <- QC_SimilarFluorophores("cFluor BYG710", 64, returnPlots=TRUE)
+Plots[[1]]
+plotly::ggplotly(Plots[[2]])
+```
+
+```{r}
+Plots <- QC_SimilarFluorophores("BB700", 64, returnPlots=TRUE)
+Plots[[1]]
+plotly::ggplotly(Plots[[2]])
+```
+
+```{r}
+Plots <- QC_SimilarFluorophores("PerCP", 64, returnPlots=TRUE)
+Plots[[1]]
+plotly::ggplotly(Plots[[2]])
+```
