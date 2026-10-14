@@ -1,0 +1,134 @@
+---
+title: "Brain Autofluorescence"
+format: html
+---
+
+```{r}
+User <- "Alexandra"
+```
+
+```{r}
+library(flowWorkspace)
+library(flowGate)
+library(Luciernaga)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+```
+
+Next, lets create the variable/object containing the file.path to both today's dataset, as well as an output storage location where we can store any intermediate outputs or plots. 
+
+```{r}
+# StorageLocation <- file.path("data") # For Quarto Render
+ StorageLocation <- file.path("users", User, "data")
+
+# OutputLocation <- file.path("outputs") # For Quarto Render
+ OutputLocation <- file.path("users", User, "outputs")
+```
+
+```{r}
+fcs_files <- list.files(StorageLocation, pattern=".fcs", full.names=TRUE)
+fcs_files
+```
+
+```{r}
+UnstainedCell_FCS <- fcs_files[stringr::str_detect(fcs_files, "Unstained")]
+UnstainedCell_FCS
+```
+
+```{r}
+UnstainedCells_cytoset <- load_cytoset_from_fcs(UnstainedCell_FCS, truncate_max_range=FALSE, transformation=FALSE)
+CellsUnstained_GatingSet <- GatingSet(UnstainedCells_cytoset)
+```
+
+```{r}
+SFC_Parameters <- colnames(CellsUnstained_GatingSet)
+FluorophoresOnly <- SFC_Parameters[!stringr::str_detect(SFC_Parameters, "FSC|SSC|Time")]
+
+Biexponential <-  flowjo_biexp_trans(channelRange=4096, maxValue=4194304,
+  pos=5.62, neg=0, widthBasis=-1000)
+MyBiexTransform <- transformerList(FluorophoresOnly, Biexponential)
+
+transform(CellsUnstained_GatingSet, MyBiexTransform)
+```
+
+```{r}
+CellGatingTable <- tibble::tribble(
+  ~filterId,    ~dims,                          ~subset,      
+  "singlets",   list("FSC-A", "FSC-H"),          "root",  
+  "scatter",    list("FSC-A", "SSC-A"),      "singlets",  
+)
+```
+
+```{r}
+#| eval: FALSE
+flowGate::gs_apply_gating_strategy(CellsUnstained_GatingSet, gating_strategy = CellGatingTable)
+```
+
+```{r}
+#| eval: FALSE
+gs_apply_gate_check(gs=CellsUnstained_GatingSet, gate="singlets")
+```
+
+```{r}
+#| eval: FALSE
+gs_apply_gate_check(gs=CellsUnstained_GatingSet, gate="scatter")
+```
+
+```{r}
+#| eval: FALSE
+
+SaveUpdatedCellUnstainedHere <- file.path(OutputLocation, "CellsUnstained_GS.gs")
+
+save_gs(CellsUnstained_GatingSet, SaveUpdatedCellUnstainedHere)
+# CellsUnstained_GatingSet <- load_gs(SaveUpdatedCellSCHere)
+```
+
+```{r}
+SaveUpdatedCellUnstainedHere <- file.path(OutputLocation, "CellsUnstained_GS.gs")
+
+CellsUnstained_GatingSet <- load_gs(SaveUpdatedCellUnstainedHere)
+```
+
+```{r}
+Updated <- pData(CellsUnstained_GatingSet) |>
+    mutate(Type="Cells", Fluorophore="scatter",
+    Antigen="Autofluorescence", Detector="V7", Negative="NoSubtraction")
+```
+
+# Brain
+
+```{r}
+devtools::document("/home/david/Documents/Luciernaga")
+devtools::load_all("/home/david/Documents/Luciernaga")
+```
+
+```{r}
+Brain <- LuciernagaIntegration(template=Updated[1,],
+ gs=CellsUnstained_GatingSet, GuessSimilar=FALSE, Unstained=TRUE)[[1]]
+```
+
+```{r}
+Plot <- Brain$LinearSlices_Plot
+plotly::ggplotly(Plot)
+```
+
+```{r}
+Plot <- Brain$LuciernagaQC_Signatures
+plotly::ggplotly(Plot)
+```
+
+```{r}
+Plot <- Brain$ProportionPlot
+plotly::ggplotly(Plot)
+```
+
+```{r}
+Plot <- Brain$LuciernagaQC_AmalgamatedPlot
+plotly::ggplotly(Plot)
+```
+
+```{r}
+Plot <- Brain$CosineSimilarityPlot
+plotly::ggplotly(Plot)
+```
